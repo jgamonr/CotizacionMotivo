@@ -1,0 +1,1322 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#153a31">
+  <title>Motivo | Control de cotizaciones</title>
+  <style>
+    :root {
+      --green: #153a31;
+      --green-2: #214d42;
+      --ink: #1c2925;
+      --muted: #69736f;
+      --copper: #c98b5e;
+      --sand: #f4f1ea;
+      --cream: #fbf8f2;
+      --line: #dedbd3;
+      --white: #fff;
+      --danger: #9b4439;
+      --success: #2f6b55;
+      --shadow: 0 16px 45px rgba(20, 45, 38, .11);
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 3% 5%, rgba(201,139,94,.16), transparent 24rem),
+        var(--sand);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    [hidden] { display: none !important; }
+
+    .login-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(201,139,94,.22), transparent 30rem),
+        linear-gradient(145deg, #102f28, #153a31 60%, #244f43);
+    }
+    .login-card {
+      width: min(460px, 100%);
+      padding: 38px;
+      border: 1px solid rgba(255,255,255,.13);
+      border-radius: 28px;
+      background: rgba(251,248,242,.97);
+      box-shadow: 0 32px 80px rgba(0,0,0,.25);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      letter-spacing: .16em;
+    }
+    .brand-mark {
+      display: grid;
+      width: 45px;
+      height: 45px;
+      place-items: center;
+      border-radius: 14px;
+      color: var(--white);
+      background: var(--green);
+      font-family: Georgia, serif;
+      font-size: 24px;
+    }
+    .brand strong { display: block; font-size: 15px; }
+    .brand small { display: block; margin-top: 3px; color: var(--muted); font-size: 9px; }
+    .login-card h1 {
+      margin: 36px 0 10px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(32px, 7vw, 46px);
+      font-weight: 400;
+      line-height: 1.05;
+    }
+    .login-card > p { margin: 0 0 28px; color: var(--muted); line-height: 1.65; }
+    .login-card label, .field label {
+      display: block;
+      margin-bottom: 8px;
+      color: #40504a;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .control {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      outline: none;
+      color: var(--ink);
+      background: var(--white);
+      padding: 11px 13px;
+      transition: border .18s, box-shadow .18s;
+    }
+    .control:focus { border-color: var(--copper); box-shadow: 0 0 0 3px rgba(201,139,94,.16); }
+    textarea.control { min-height: 112px; resize: vertical; }
+    .login-actions { display: grid; gap: 12px; margin-top: 18px; }
+    .hint { color: var(--muted); font-size: 12px; line-height: 1.55; }
+
+    .button {
+      display: inline-flex;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid transparent;
+      border-radius: 11px;
+      padding: 10px 16px;
+      font-weight: 750;
+      transition: transform .18s, opacity .18s, background .18s;
+    }
+    .button:hover { transform: translateY(-1px); }
+    .button:disabled { cursor: wait; opacity: .58; transform: none; }
+    .button-primary { color: var(--white); background: var(--green); }
+    .button-primary:hover { background: var(--green-2); }
+    .button-copper { color: #22170f; background: #dbac83; }
+    .button-light { border-color: var(--line); color: var(--ink); background: var(--white); }
+    .button-ghost { color: var(--muted); background: transparent; }
+    .button-danger { border-color: #e7c8c2; color: var(--danger); background: #fff8f6; }
+
+    .app { min-height: 100vh; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      display: flex;
+      min-height: 76px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 14px 28px;
+      border-bottom: 1px solid rgba(222,219,211,.8);
+      background: rgba(251,248,242,.92);
+      backdrop-filter: blur(16px);
+    }
+    .topbar-actions { display: flex; align-items: center; gap: 10px; }
+    .connection {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .connection::before {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4b9c78;
+      box-shadow: 0 0 0 4px rgba(75,156,120,.12);
+      content: "";
+    }
+
+    .dashboard { width: min(1600px, 100%); margin: 0 auto; padding: 26px 28px 42px; }
+    .overview {
+      display: grid;
+      grid-template-columns: minmax(280px, 1.6fr) repeat(4, minmax(140px, .55fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .overview-intro, .metric {
+      min-height: 116px;
+      border: 1px solid rgba(222,219,211,.85);
+      border-radius: 18px;
+      background: rgba(255,255,255,.72);
+      padding: 20px;
+    }
+    .overview-intro {
+      color: var(--white);
+      background: linear-gradient(135deg, var(--green), #234f42);
+      border-color: transparent;
+    }
+    .overview-intro p, .metric span { margin: 0; color: rgba(255,255,255,.7); font-size: 12px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+    .overview-intro h1 { margin: 12px 0 0; font-family: Georgia, serif; font-size: 30px; font-weight: 400; }
+    .metric span { color: var(--muted); }
+    .metric strong { display: block; margin-top: 16px; font-size: 29px; }
+    .metric small { color: var(--muted); }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(330px, 390px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .panel {
+      border: 1px solid rgba(222,219,211,.9);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.82);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .requests-panel {
+      position: sticky;
+      top: 100px;
+      height: calc(100vh - 126px);
+      min-height: 590px;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-heading { padding: 20px; border-bottom: 1px solid var(--line); }
+    .panel-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .panel-heading h2 { margin: 0; font-family: Georgia, serif; font-size: 24px; font-weight: 400; }
+    .count-badge {
+      display: inline-grid;
+      min-width: 30px;
+      height: 30px;
+      place-items: center;
+      border-radius: 50%;
+      color: var(--green);
+      background: #e9f0ec;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .filters { display: grid; grid-template-columns: 1fr 150px; gap: 8px; margin-top: 16px; }
+    .filters .control { min-height: 42px; font-size: 13px; }
+    .requests-list { flex: 1; min-height: 0; overflow: auto; padding: 10px; }
+    .request-card {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 9px 12px;
+      margin: 0 0 8px;
+      border: 1px solid transparent;
+      border-radius: 14px;
+      padding: 15px;
+      text-align: left;
+      color: var(--ink);
+      background: transparent;
+      transition: background .18s, border .18s, transform .18s;
+    }
+    .request-card:hover { transform: translateY(-1px); background: var(--cream); }
+    .request-card.active { border-color: rgba(201,139,94,.45); background: #fffaf3; box-shadow: inset 3px 0 var(--copper); }
+    .request-card strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .request-card small { color: var(--muted); }
+    .request-card .event { grid-column: 1 / -1; color: #4a5853; font-size: 12px; }
+    .status {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      border-radius: 999px;
+      padding: 5px 9px;
+      color: #53605b;
+      background: #eef0ed;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .03em;
+      white-space: nowrap;
+      text-transform: uppercase;
+    }
+    .status[data-status="Nuevo"] { color: #8a5b2e; background: #fff0dc; }
+    .status[data-status="Contactado"] { color: #326483; background: #e9f3fa; }
+    .status[data-status="En preparación"] { color: #735b22; background: #f8efcc; }
+    .status[data-status="Cotización enviada"] { color: #5b4c89; background: #f0ecff; }
+    .status[data-status="Confirmado"] { color: #2c6b52; background: #e4f4eb; }
+    .status[data-status="No concretado"] { color: #8d433a; background: #fae9e6; }
+    .empty-list { padding: 42px 20px; text-align: center; color: var(--muted); line-height: 1.6; }
+
+    .detail-panel { min-height: 650px; }
+    .empty-detail { display: grid; min-height: 650px; place-items: center; padding: 40px; text-align: center; color: var(--muted); }
+    .empty-detail svg { width: 48px; opacity: .35; }
+    .record-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      padding: 24px 26px 20px;
+      color: var(--white);
+      background:
+        linear-gradient(110deg, rgba(255,255,255,.04), transparent),
+        var(--green);
+    }
+    .record-kicker { margin: 0 0 9px; color: #d7bb9f; font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .record-head h2 { margin: 0; font-family: Georgia, serif; font-size: clamp(27px, 4vw, 38px); font-weight: 400; }
+    .record-ref { margin: 8px 0 0; color: rgba(255,255,255,.63); font-size: 12px; }
+    .record-head .status { align-self: start; margin-top: 4px; }
+    .record-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border-bottom: 1px solid var(--line);
+      background: var(--cream);
+    }
+    .summary-cell { min-width: 0; padding: 17px 20px; border-right: 1px solid var(--line); }
+    .summary-cell:last-child { border: 0; }
+    .summary-cell span { display: block; margin-bottom: 6px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .summary-cell strong { display: block; overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+    .summary-cell a { color: inherit; text-decoration: none; }
+
+    .tabs { display: flex; gap: 7px; padding: 14px 20px 0; border-bottom: 1px solid var(--line); }
+    .tab {
+      border: 0;
+      border-bottom: 3px solid transparent;
+      color: var(--muted);
+      background: transparent;
+      padding: 12px 14px 13px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .tab.active { border-color: var(--copper); color: var(--green); }
+    .tab-content { padding: 24px 26px 28px; }
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 18px;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .section-label::before { width: 24px; height: 2px; background: var(--copper); content: ""; }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .info-card { border: 1px solid var(--line); border-radius: 13px; padding: 15px; background: var(--cream); }
+    .info-card.wide { grid-column: 1 / -1; }
+    .info-card span { display: block; margin-bottom: 7px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+    .info-card p { margin: 0; line-height: 1.55; white-space: pre-wrap; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .field.wide { grid-column: 1 / -1; }
+    .form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .quote-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .items-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; }
+    .items-table { width: 100%; min-width: 720px; border-collapse: collapse; }
+    .items-table th {
+      padding: 12px 10px;
+      text-align: left;
+      color: #53605b;
+      background: #f0eee8;
+      font-size: 10px;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+    .items-table td { padding: 9px 8px; border-top: 1px solid var(--line); vertical-align: middle; }
+    .items-table .control { min-height: 39px; padding: 8px 10px; font-size: 13px; }
+    .items-table .number { width: 92px; text-align: right; }
+    .items-table .unit { width: 112px; }
+    .line-total { display: block; min-width: 95px; text-align: right; font-size: 13px; font-weight: 800; }
+    .icon-button {
+      display: grid;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      color: var(--danger);
+      background: var(--white);
+      font-weight: 900;
+    }
+    .add-line { margin: 12px 0 24px; }
+    .quote-bottom { display: grid; grid-template-columns: 1fr minmax(280px, 370px); gap: 24px; align-items: start; }
+    .conditions { display: grid; gap: 15px; }
+    .totals-card { border: 1px solid var(--line); border-radius: 14px; background: var(--cream); overflow: hidden; }
+    .total-row { display: flex; justify-content: space-between; gap: 20px; padding: 12px 15px; border-bottom: 1px solid var(--line); }
+    .total-row:last-child { border: 0; }
+    .total-row span { color: var(--muted); }
+    .total-row.grand { color: var(--white); background: var(--green); font-size: 18px; }
+    .total-row.grand span { color: rgba(255,255,255,.75); }
+    .total-row.advance { color: #6a472b; background: #f3e1d0; }
+
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 90;
+      width: min(390px, calc(100vw - 48px));
+      border-radius: 14px;
+      padding: 15px 18px;
+      color: var(--white);
+      background: var(--green);
+      box-shadow: 0 18px 50px rgba(0,0,0,.23);
+      line-height: 1.45;
+    }
+    .toast.error { background: var(--danger); }
+    .loading {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      background: rgba(251,248,242,.76);
+      backdrop-filter: blur(2px);
+    }
+    .spinner {
+      width: 34px;
+      height: 34px;
+      margin: 0 auto 10px;
+      border: 3px solid #dcd8cf;
+      border-top-color: var(--copper);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 1180px) {
+      .overview { grid-template-columns: repeat(4, 1fr); }
+      .overview-intro { grid-column: 1 / -1; min-height: auto; }
+      .workspace { grid-template-columns: 330px minmax(0, 1fr); }
+      .record-summary { grid-template-columns: repeat(2, 1fr); }
+      .summary-cell:nth-child(2) { border-right: 0; }
+      .summary-cell:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+    }
+    @media (max-width: 900px) {
+      .topbar { padding-inline: 18px; }
+      .connection { display: none; }
+      .dashboard { padding: 18px; }
+      .workspace { grid-template-columns: 1fr; }
+      .requests-panel { position: relative; top: auto; height: auto; min-height: 0; }
+      .requests-list { max-height: 430px; }
+      .quote-bottom { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .brand small { display: none; }
+      .topbar .button span { display: none; }
+      .overview { grid-template-columns: repeat(2, 1fr); }
+      .overview-intro { grid-column: 1 / -1; }
+      .metric { min-height: 100px; padding: 16px; }
+      .metric strong { margin-top: 12px; font-size: 25px; }
+      .filters, .form-grid, .quote-meta, .info-grid { grid-template-columns: 1fr; }
+      .field.wide, .info-card.wide { grid-column: auto; }
+      .record-head { grid-template-columns: 1fr; padding: 22px 20px; }
+      .record-head .status { margin: 0; }
+      .record-summary { grid-template-columns: 1fr; }
+      .summary-cell, .summary-cell:nth-child(2) { border-right: 0; border-bottom: 1px solid var(--line); }
+      .summary-cell:last-child { border-bottom: 0; }
+      .tabs { overflow-x: auto; padding-inline: 10px; }
+      .tab { white-space: nowrap; }
+      .tab-content { padding: 20px 16px 24px; }
+      .form-actions { align-items: stretch; flex-direction: column; }
+      .form-actions .button { width: 100%; }
+      .login-card { padding: 28px 22px; }
+    }
+  </style>
+</head>
+<body>
+  <section class="login-screen" id="loginScreen">
+    <form class="login-card" id="loginForm">
+      <div class="brand">
+        <span class="brand-mark">M</span>
+        <span><strong>MOTIVO</strong><small>ALIMENTOS &amp; BEBIDAS</small></span>
+      </div>
+      <h1>Control de<br>cotizaciones.</h1>
+      <p>Consulta solicitudes, registra el seguimiento y prepara una cotización profesional desde un solo lugar.</p>
+      <label for="adminKey">Clave de acceso</label>
+      <input class="control" id="adminKey" type="password" autocomplete="current-password" placeholder="Ingresa la clave del panel" required>
+      <div class="login-actions">
+        <button class="button button-primary" id="loginButton" type="submit">Entrar al panel <span>→</span></button>
+        <span class="hint">La clave se conserva únicamente durante esta sesión del navegador.</span>
+      </div>
+    </form>
+  </section>
+
+  <div class="app" id="app" hidden>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">M</span>
+        <span><strong>MOTIVO</strong><small>CONTROL DE COTIZACIONES</small></span>
+      </div>
+      <div class="topbar-actions">
+        <span class="connection">Google Sheets conectado</span>
+        <button class="button button-light" id="refreshButton" type="button" title="Actualizar registros">↻ <span>Actualizar</span></button>
+        <button class="button button-ghost" id="logoutButton" type="button">Salir</button>
+      </div>
+    </header>
+
+    <main class="dashboard">
+      <section class="overview" aria-label="Resumen de cotizaciones">
+        <div class="overview-intro">
+          <p>Panel de seguimiento</p>
+          <h1>Que ningún motivo se quede sin respuesta.</h1>
+        </div>
+        <div class="metric"><span>Solicitudes</span><strong id="metricAll">0</strong><small>Total registrado</small></div>
+        <div class="metric"><span>Nuevas</span><strong id="metricNew">0</strong><small>Por contactar</small></div>
+        <div class="metric"><span>En proceso</span><strong id="metricProcess">0</strong><small>Con seguimiento</small></div>
+        <div class="metric"><span>Confirmadas</span><strong id="metricConfirmed">0</strong><small>Eventos cerrados</small></div>
+      </section>
+
+      <section class="workspace">
+        <aside class="panel requests-panel">
+          <div class="panel-heading">
+            <div class="panel-title-row">
+              <h2>Solicitudes</h2>
+              <span class="count-badge" id="recordCount">0</span>
+            </div>
+            <div class="filters">
+              <input class="control" id="searchInput" type="search" placeholder="Buscar nombre, teléfono…" aria-label="Buscar solicitudes">
+              <select class="control" id="statusFilter" aria-label="Filtrar por estado">
+                <option value="">Todos los estados</option>
+                <option>Nuevo</option>
+                <option>Contactado</option>
+                <option>En preparación</option>
+                <option>Cotización enviada</option>
+                <option>Confirmado</option>
+                <option>No concretado</option>
+              </select>
+            </div>
+          </div>
+          <div class="requests-list" id="requestsList"></div>
+        </aside>
+
+        <section class="panel detail-panel" id="detailPanel">
+          <div class="empty-detail" id="emptyDetail">
+            <div>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M9 11h6M9 15h4M8 3h8l3 3v15H5V3h3Z"/><path d="M16 3v4h4"/></svg>
+              <h2>Selecciona una solicitud</h2>
+              <p>Abre un registro para consultar sus datos y continuar el seguimiento.</p>
+            </div>
+          </div>
+
+          <div id="recordDetail" hidden>
+            <div class="record-head">
+              <div>
+                <p class="record-kicker">Solicitud de cotización</p>
+                <h2 id="clientName">—</h2>
+                <p class="record-ref" id="recordReference">—</p>
+              </div>
+              <span class="status" id="recordStatus">Nuevo</span>
+            </div>
+            <div class="record-summary">
+              <div class="summary-cell"><span>Evento</span><strong id="summaryEvent">—</strong></div>
+              <div class="summary-cell"><span>Fecha</span><strong id="summaryDate">—</strong></div>
+              <div class="summary-cell"><span>Invitados</span><strong id="summaryGuests">—</strong></div>
+              <div class="summary-cell"><span>Contacto</span><strong><a id="summaryPhone" href="#">—</a></strong></div>
+            </div>
+
+            <div class="tabs" role="tablist">
+              <button class="tab active" type="button" data-tab="follow" role="tab" aria-selected="true">Datos y seguimiento</button>
+              <button class="tab" type="button" data-tab="quote" role="tab" aria-selected="false">Preparar cotización</button>
+            </div>
+
+            <div class="tab-content" id="followTab">
+              <p class="section-label">Información recibida</p>
+              <div class="info-grid">
+                <div class="info-card"><span>Correo</span><p id="infoEmail">—</p></div>
+                <div class="info-card"><span>Tipo de servicio</span><p id="infoService">—</p></div>
+                <div class="info-card"><span>Lugar o zona</span><p id="infoLocation">—</p></div>
+                <div class="info-card"><span>Tipo de comida</span><p id="infoFood">—</p></div>
+                <div class="info-card wide"><span>Platillos de interés</span><p id="infoFoodNotes">—</p></div>
+                <div class="info-card wide"><span>Detalles del evento</span><p id="infoDetails">—</p></div>
+              </div>
+
+              <form id="followForm">
+                <p class="section-label">Seguimiento comercial</p>
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="followStatus">Estado</label>
+                    <select class="control" id="followStatus" required>
+                      <option>Nuevo</option>
+                      <option>Contactado</option>
+                      <option>En preparación</option>
+                      <option>Cotización enviada</option>
+                      <option>Confirmado</option>
+                      <option>No concretado</option>
+                    </select>
+                  </div>
+                  <div class="field"><label for="responsible">Responsable</label><input class="control" id="responsible" maxlength="80" placeholder="Nombre de quien da seguimiento"></div>
+                  <div class="field"><label for="lastContact">Último contacto</label><input class="control" id="lastContact" type="date"></div>
+                  <div class="field"><label for="nextActionDate">Fecha de próxima acción</label><input class="control" id="nextActionDate" type="date"></div>
+                  <div class="field wide"><label for="nextAction">Próxima acción</label><input class="control" id="nextAction" maxlength="180" placeholder="Ej. Llamar para confirmar menú y horario"></div>
+                  <div class="field wide"><label for="followNotes">Notas de seguimiento</label><textarea class="control" id="followNotes" maxlength="2000" placeholder="Acuerdos, presupuesto indicado, preferencias y pendientes…"></textarea></div>
+                </div>
+                <div class="form-actions">
+                  <button class="button button-primary" id="saveFollowButton" type="submit">Guardar seguimiento</button>
+                </div>
+              </form>
+            </div>
+
+            <div class="tab-content" id="quoteTab" hidden>
+              <form id="quoteForm">
+                <p class="section-label">Datos de la cotización</p>
+                <div class="quote-meta">
+                  <div class="field"><label for="quoteNumber">Folio</label><input class="control" id="quoteNumber" maxlength="50" required></div>
+                  <div class="field"><label for="quoteDate">Fecha de cotización</label><input class="control" id="quoteDate" type="date" required></div>
+                  <div class="field"><label for="validityDays">Vigencia (días)</label><input class="control" id="validityDays" type="number" min="1" max="90" value="10" required></div>
+                </div>
+
+                <p class="section-label">Conceptos del servicio</p>
+                <div class="items-wrap">
+                  <table class="items-table">
+                    <thead><tr><th>Descripción</th><th>Cantidad</th><th>Unidad</th><th>Precio unitario</th><th>Importe</th><th></th></tr></thead>
+                    <tbody id="quoteItems"></tbody>
+                  </table>
+                </div>
+                <button class="button button-light add-line" id="addItemButton" type="button">＋ Agregar concepto</button>
+
+                <div class="quote-bottom">
+                  <div class="conditions">
+                    <div class="field">
+                      <label for="terms">Condiciones y observaciones</label>
+                      <textarea class="control" id="terms" maxlength="1200" placeholder="Incluye montaje, horario, personal, condiciones de pago o elementos no incluidos."></textarea>
+                    </div>
+                    <div class="form-grid">
+                      <div class="field"><label for="vatRate">IVA</label><select class="control" id="vatRate"><option value="0">Sin IVA</option><option value="8">8%</option><option value="16">16%</option></select></div>
+                      <div class="field"><label for="advancePct">Anticipo requerido</label><select class="control" id="advancePct"><option value="0">Sin anticipo</option><option value="30">30%</option><option value="50" selected>50%</option><option value="70">70%</option><option value="100">100%</option></select></div>
+                    </div>
+                  </div>
+                  <div class="totals-card" aria-live="polite">
+                    <div class="total-row"><span>Subtotal</span><strong id="subtotalDisplay">$0.00</strong></div>
+                    <div class="total-row"><span>IVA</span><strong id="vatDisplay">$0.00</strong></div>
+                    <div class="total-row grand"><span>Total</span><strong id="totalDisplay">$0.00</strong></div>
+                    <div class="total-row advance"><span>Anticipo</span><strong id="advanceDisplay">$0.00</strong></div>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button class="button button-light" id="saveQuoteButton" type="button">Guardar cotización</button>
+                  <button class="button button-copper" id="savePdfButton" type="button">Guardar y descargar PDF</button>
+                  <button class="button button-primary" id="pdfButton" type="button">Descargar PDF</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script>
+    "use strict";
+
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzdmbhWQe3BVNoywWUSVSK1Gng4M6OCaeUflRI4r6nMgZFd5ZSC6oCKzY3YYF9JTyQWWA/exec";
+    const SESSION_KEY = "motivo_admin_key";
+    const STATUS_OPTIONS = ["Nuevo", "Contactado", "En preparación", "Cotización enviada", "Confirmado", "No concretado"];
+    const LOCAL_DEMO = location.hostname === "terminal.local" && new URLSearchParams(location.search).get("demo") === "1";
+
+    const state = {
+      key: sessionStorage.getItem(SESSION_KEY) || "",
+      records: [],
+      filtered: [],
+      current: null,
+      items: [],
+      totals: { subtotal: 0, vat: 0, total: 0, advance: 0 }
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const loginScreen = $("loginScreen");
+    const app = $("app");
+    const requestsList = $("requestsList");
+    const emptyDetail = $("emptyDetail");
+    const recordDetail = $("recordDetail");
+    const toast = $("toast");
+    let toastTimer;
+
+    $("loginForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = $("loginButton");
+      state.key = $("adminKey").value.trim();
+      if (!state.key) return;
+      button.disabled = true;
+      button.textContent = "Conectando…";
+      try {
+        await loadRecords();
+        sessionStorage.setItem(SESSION_KEY, state.key);
+        loginScreen.hidden = true;
+        app.hidden = false;
+      } catch (error) {
+        showToast(error.message || "No fue posible ingresar. Revisa la clave.", true);
+      } finally {
+        button.disabled = false;
+        button.innerHTML = "Entrar al panel <span>→</span>";
+      }
+    });
+
+    $("logoutButton").addEventListener("click", () => {
+      sessionStorage.removeItem(SESSION_KEY);
+      location.reload();
+    });
+    $("refreshButton").addEventListener("click", async () => {
+      const button = $("refreshButton");
+      button.disabled = true;
+      try {
+        await loadRecords(state.current && state.current.reference);
+        showToast("Registros actualizados.");
+      } catch (error) {
+        showToast(error.message || "No fue posible actualizar.", true);
+      } finally {
+        button.disabled = false;
+      }
+    });
+    $("searchInput").addEventListener("input", applyFilters);
+    $("statusFilter").addEventListener("change", applyFilters);
+
+    document.querySelectorAll(".tab").forEach((button) => {
+      button.addEventListener("click", () => setTab(button.dataset.tab));
+    });
+
+    $("followForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!state.current) return;
+      const button = $("saveFollowButton");
+      button.disabled = true;
+      try {
+        await postAction("saveFollowUp", {
+          reference: state.current.reference,
+          status: $("followStatus").value,
+          responsible: $("responsible").value,
+          lastContact: $("lastContact").value,
+          nextAction: $("nextAction").value,
+          nextActionDate: $("nextActionDate").value,
+          followNotes: $("followNotes").value
+        });
+        await pause(900);
+        await loadRecords(state.current.reference);
+        showToast("Seguimiento guardado correctamente.");
+      } catch (error) {
+        showToast(error.message || "No fue posible guardar el seguimiento.", true);
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    $("addItemButton").addEventListener("click", () => {
+      state.items.push({ description: "", quantity: 1, unit: "servicio", unitPrice: 0 });
+      renderItems();
+    });
+    $("quoteItems").addEventListener("input", handleItemChange);
+    $("quoteItems").addEventListener("click", (event) => {
+      const remove = event.target.closest("[data-remove]");
+      if (!remove) return;
+      state.items.splice(Number(remove.dataset.remove), 1);
+      if (!state.items.length) state.items.push({ description: "", quantity: 1, unit: "servicio", unitPrice: 0 });
+      renderItems();
+    });
+    $("vatRate").addEventListener("change", recalculate);
+    $("advancePct").addEventListener("change", recalculate);
+    $("saveQuoteButton").addEventListener("click", () => saveQuote(false));
+    $("savePdfButton").addEventListener("click", () => saveQuote(true));
+    $("pdfButton").addEventListener("click", downloadQuotePdf);
+
+    async function loadRecords(keepReference) {
+      const response = await jsonp({ action: "list", key: state.key });
+      if (!response || !response.ok) throw new Error((response && response.error) || "La clave no es válida o el servicio no está disponible.");
+      state.records = Array.isArray(response.records) ? response.records : [];
+      updateMetrics();
+      applyFilters();
+      const target = keepReference && state.records.find((record) => record.reference === keepReference);
+      if (target) selectRecord(target.reference);
+      else if (state.records.length && !state.current) selectRecord(state.records[0].reference);
+    }
+
+    function applyFilters() {
+      const query = normalize($("searchInput").value);
+      const status = $("statusFilter").value;
+      state.filtered = state.records.filter((record) => {
+        const haystack = normalize([
+          record.name, record.phone, record.email, record.reference,
+          record.eventType, record.location, record.foodInterest
+        ].join(" "));
+        return (!query || haystack.includes(query)) && (!status || record.status === status);
+      });
+      renderRequests();
+    }
+
+    function renderRequests() {
+      $("recordCount").textContent = state.filtered.length;
+      if (!state.filtered.length) {
+        requestsList.innerHTML = '<div class="empty-list">No hay solicitudes que coincidan con el filtro.</div>';
+        return;
+      }
+      requestsList.innerHTML = state.filtered.map((record) => {
+        const active = state.current && state.current.reference === record.reference ? " active" : "";
+        return '<button class="request-card' + active + '" type="button" data-reference="' + escapeHtml(record.reference) + '">' +
+          '<strong>' + escapeHtml(record.name || "Sin nombre") + '</strong>' +
+          '<span class="status" data-status="' + escapeHtml(record.status || "Nuevo") + '">' + escapeHtml(record.status || "Nuevo") + '</span>' +
+          '<small>' + escapeHtml(record.phone || record.email || "Sin contacto") + '</small>' +
+          '<small>' + escapeHtml(formatShortDate(record.createdAt)) + '</small>' +
+          '<span class="event">' + escapeHtml(record.eventType || "Evento") + ' · ' + escapeHtml(formatDate(record.eventDate)) + ' · ' + escapeHtml(String(record.guests || "—")) + ' invitados</span>' +
+        '</button>';
+      }).join("");
+      requestsList.querySelectorAll(".request-card").forEach((card) => {
+        card.addEventListener("click", () => selectRecord(card.dataset.reference));
+      });
+    }
+
+    function selectRecord(reference) {
+      const record = state.records.find((item) => item.reference === reference);
+      if (!record) return;
+      state.current = record;
+      emptyDetail.hidden = true;
+      recordDetail.hidden = false;
+      renderRequests();
+
+      setText("clientName", record.name || "Sin nombre");
+      setText("recordReference", record.reference || "Sin referencia");
+      setText("recordStatus", record.status || "Nuevo");
+      $("recordStatus").dataset.status = record.status || "Nuevo";
+      setText("summaryEvent", record.eventType || "—");
+      setText("summaryDate", formatDate(record.eventDate));
+      setText("summaryGuests", record.guests ? record.guests + " personas" : "—");
+      setText("summaryPhone", record.phone || "—");
+      $("summaryPhone").href = record.phone ? "tel:" + record.phone.replace(/[^\d+]/g, "") : "#";
+      setText("infoEmail", record.email || "—");
+      setText("infoService", record.serviceType || "—");
+      setText("infoLocation", record.location || "—");
+      setText("infoFood", record.foodInterest || "—");
+      setText("infoFoodNotes", record.foodNotes || "Por definir");
+      setText("infoDetails", record.details || "Sin detalles adicionales.");
+
+      $("followStatus").value = STATUS_OPTIONS.includes(record.status) ? record.status : "Nuevo";
+      $("responsible").value = record.responsible || "";
+      $("lastContact").value = record.lastContact || "";
+      $("nextAction").value = record.nextAction || "";
+      $("nextActionDate").value = record.nextActionDate || "";
+      $("followNotes").value = record.followNotes || "";
+
+      $("quoteNumber").value = record.quoteNumber || buildQuoteNumber(record.reference);
+      $("quoteDate").value = record.quoteDate || todayIso();
+      $("validityDays").value = record.validityDays || 10;
+      $("vatRate").value = String(record.vatRate != null ? record.vatRate : inferVatRate(record));
+      $("advancePct").value = String(record.advancePct != null ? record.advancePct : inferAdvancePct(record));
+      $("terms").value = record.terms || "Cotización sujeta a disponibilidad. Para reservar la fecha se requiere el anticipo indicado. El saldo deberá cubrirse antes de iniciar el servicio.";
+      state.items = parseItems(record.quoteItems);
+      if (!state.items.length) {
+        state.items = [{
+          description: buildDefaultDescription(record),
+          quantity: Number(record.guests) || 1,
+          unit: record.guests ? "persona" : "servicio",
+          unitPrice: 0
+        }];
+      }
+      renderItems();
+      setTab("follow");
+    }
+
+    function renderItems() {
+      $("quoteItems").innerHTML = state.items.map((item, index) =>
+        '<tr>' +
+          '<td><input class="control" data-field="description" data-index="' + index + '" maxlength="240" value="' + escapeHtml(item.description || "") + '" placeholder="Servicio, platillo o bebida"></td>' +
+          '<td><input class="control number" data-field="quantity" data-index="' + index + '" type="number" min="0" step="0.01" value="' + safeNumber(item.quantity, 1) + '"></td>' +
+          '<td><input class="control unit" data-field="unit" data-index="' + index + '" maxlength="30" value="' + escapeHtml(item.unit || "servicio") + '"></td>' +
+          '<td><input class="control number" data-field="unitPrice" data-index="' + index + '" type="number" min="0" step="0.01" value="' + safeNumber(item.unitPrice, 0) + '"></td>' +
+          '<td><span class="line-total" id="lineTotal' + index + '">$0.00</span></td>' +
+          '<td><button class="icon-button" type="button" data-remove="' + index + '" aria-label="Eliminar concepto">×</button></td>' +
+        '</tr>'
+      ).join("");
+      recalculate();
+    }
+
+    function handleItemChange(event) {
+      const input = event.target.closest("[data-field]");
+      if (!input) return;
+      const index = Number(input.dataset.index);
+      const field = input.dataset.field;
+      state.items[index][field] = field === "quantity" || field === "unitPrice" ? Number(input.value) || 0 : input.value;
+      recalculate();
+    }
+
+    function recalculate() {
+      const subtotal = state.items.reduce((sum, item, index) => {
+        const line = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
+        const display = $("lineTotal" + index);
+        if (display) display.textContent = money(line);
+        return sum + line;
+      }, 0);
+      const vatRate = Number($("vatRate").value) || 0;
+      const advancePct = Number($("advancePct").value) || 0;
+      const vat = subtotal * vatRate / 100;
+      const total = subtotal + vat;
+      const advance = total * advancePct / 100;
+      state.totals = { subtotal, vat, total, advance };
+      $("subtotalDisplay").textContent = money(subtotal);
+      $("vatDisplay").textContent = money(vat);
+      $("totalDisplay").textContent = money(total);
+      $("advanceDisplay").textContent = money(advance);
+    }
+
+    async function saveQuote(downloadAfter) {
+      if (!state.current || !validateQuote()) return;
+      const button = downloadAfter ? $("savePdfButton") : $("saveQuoteButton");
+      button.disabled = true;
+      try {
+        await postAction("saveQuote", quotePayload());
+        await pause(900);
+        await loadRecords(state.current.reference);
+        setTab("quote");
+        showToast("Cotización guardada en el seguimiento.");
+        if (downloadAfter) downloadQuotePdf();
+      } catch (error) {
+        showToast(error.message || "No fue posible guardar la cotización.", true);
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function quotePayload() {
+      recalculate();
+      return {
+        reference: state.current.reference,
+        quoteNumber: $("quoteNumber").value.trim(),
+        quoteDate: $("quoteDate").value,
+        validityDays: $("validityDays").value,
+        quoteItems: JSON.stringify(state.items),
+        subtotal: state.totals.subtotal.toFixed(2),
+        vatRate: $("vatRate").value,
+        vat: state.totals.vat.toFixed(2),
+        total: state.totals.total.toFixed(2),
+        advancePct: $("advancePct").value,
+        advance: state.totals.advance.toFixed(2),
+        terms: $("terms").value
+      };
+    }
+
+    function validateQuote() {
+      const validItems = state.items.filter((item) => String(item.description || "").trim() && Number(item.quantity) > 0);
+      if (!$("quoteNumber").value.trim() || !$("quoteDate").value) {
+        showToast("Completa el folio y la fecha de la cotización.", true);
+        return false;
+      }
+      if (!validItems.length) {
+        showToast("Agrega por lo menos un concepto con descripción y cantidad.", true);
+        return false;
+      }
+      state.items = validItems;
+      renderItems();
+      return true;
+    }
+
+    async function postAction(action, values) {
+      const data = new FormData();
+      data.append("action", action);
+      data.append("key", state.key);
+      Object.entries(values).forEach(([name, value]) => data.append(name, value == null ? "" : String(value)));
+      await fetch(APPS_SCRIPT_URL, { method: "POST", mode: "no-cors", body: data });
+    }
+
+    function jsonp(params) {
+      return new Promise((resolve, reject) => {
+        const callbackName = "__motivoCallback" + Date.now() + Math.floor(Math.random() * 1000);
+        const script = document.createElement("script");
+        const url = new URL(APPS_SCRIPT_URL);
+        Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
+        url.searchParams.set("callback", callbackName);
+        let finished = false;
+        const clean = () => {
+          if (finished) return;
+          finished = true;
+          delete window[callbackName];
+          script.remove();
+          clearTimeout(timer);
+        };
+        window[callbackName] = (data) => { clean(); resolve(data); };
+        script.onerror = () => { clean(); reject(new Error("No fue posible conectar con Google Sheets.")); };
+        const timer = setTimeout(() => { clean(); reject(new Error("La conexión tardó demasiado. Intenta nuevamente.")); }, 15000);
+        script.src = url.toString();
+        document.body.appendChild(script);
+      });
+    }
+
+    function setTab(name) {
+      document.querySelectorAll(".tab").forEach((tab) => {
+        const active = tab.dataset.tab === name;
+        tab.classList.toggle("active", active);
+        tab.setAttribute("aria-selected", String(active));
+      });
+      $("followTab").hidden = name !== "follow";
+      $("quoteTab").hidden = name !== "quote";
+    }
+
+    function updateMetrics() {
+      $("metricAll").textContent = state.records.length;
+      $("metricNew").textContent = state.records.filter((record) => record.status === "Nuevo").length;
+      $("metricProcess").textContent = state.records.filter((record) => ["Contactado", "En preparación", "Cotización enviada"].includes(record.status)).length;
+      $("metricConfirmed").textContent = state.records.filter((record) => record.status === "Confirmado").length;
+    }
+
+    function downloadQuotePdf() {
+      if (!state.current || !validateQuote()) return;
+      recalculate();
+      const bytes = buildPdf(state.current, {
+        number: $("quoteNumber").value.trim(),
+        date: $("quoteDate").value,
+        validityDays: Number($("validityDays").value) || 10,
+        items: state.items,
+        vatRate: Number($("vatRate").value) || 0,
+        advancePct: Number($("advancePct").value) || 0,
+        terms: $("terms").value,
+        totals: state.totals
+      });
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = sanitizeFilename($("quoteNumber").value || "Cotizacion-Motivo") + ".pdf";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2500);
+      showToast("PDF generado. Revisa la carpeta de descargas.");
+    }
+
+    function buildPdf(record, quote) {
+      const firstPageItems = quote.items.slice(0, 5);
+      const remaining = quote.items.slice(5);
+      const chunks = [];
+      for (let i = 0; i < remaining.length; i += 9) chunks.push(remaining.slice(i, i + 9));
+      const pageItems = [firstPageItems, ...chunks];
+      const streams = pageItems.map((items, pageIndex) => {
+        const lastPage = pageIndex === pageItems.length - 1;
+        return buildPdfPage(record, quote, items, pageIndex, pageItems.length, lastPage);
+      });
+      return assemblePdf(streams);
+    }
+
+    function buildPdfPage(record, quote, items, pageIndex, totalPages, lastPage) {
+      const out = [];
+      const dark = [0.082, 0.227, 0.192];
+      const copper = [0.788, 0.545, 0.369];
+      const ink = [0.11, 0.16, 0.145];
+      const muted = [0.41, 0.45, 0.43];
+      const light = [0.965, 0.953, 0.925];
+
+      pdfRect(out, 0, 752, 595, 90, dark, true);
+      pdfText(out, 42, 806, 22, "MOTIVO", true, [1,1,1]);
+      pdfText(out, 42, 786, 8, "ALIMENTOS & BEBIDAS", false, [0.86,0.75,0.64]);
+      pdfText(out, 553, 806, 9, "COTIZACIÓN", true, [1,1,1], "right");
+      pdfText(out, 553, 788, 8, quote.number, false, [0.86,0.75,0.64], "right");
+      pdfRect(out, 42, 766, 55, 3, copper, true);
+
+      if (pageIndex === 0) {
+        pdfText(out, 42, 724, 8, "PREPARADO PARA", true, copper);
+        pdfText(out, 42, 700, 19, record.name || "Cliente", true, ink);
+        pdfText(out, 42, 682, 9, record.email || "", false, muted);
+        pdfText(out, 42, 666, 9, record.phone || "", false, muted);
+
+        pdfText(out, 553, 724, 8, "FECHA", true, copper, "right");
+        pdfText(out, 553, 704, 10, formatDate(quote.date), true, ink, "right");
+        pdfText(out, 553, 682, 8, "VIGENCIA", true, copper, "right");
+        pdfText(out, 553, 664, 9, quote.validityDays + " días", false, ink, "right");
+
+        pdfRect(out, 42, 595, 511, 51, light, true);
+        pdfText(out, 55, 629, 8, "EVENTO", true, copper);
+        pdfText(out, 55, 610, 10, record.eventType || "Evento", true, ink);
+        pdfText(out, 225, 629, 8, "FECHA DEL EVENTO", true, copper);
+        pdfText(out, 225, 610, 10, formatDate(record.eventDate), true, ink);
+        pdfText(out, 393, 629, 8, "INVITADOS", true, copper);
+        pdfText(out, 393, 610, 10, String(record.guests || "—"), true, ink);
+      } else {
+        pdfText(out, 42, 715, 10, "Continuación de conceptos", true, ink);
+        pdfText(out, 553, 715, 8, "Página " + (pageIndex + 1) + " de " + totalPages, false, muted, "right");
+      }
+
+      let y = pageIndex === 0 ? 566 : 690;
+      pdfRect(out, 42, y, 511, 25, dark, true);
+      pdfText(out, 52, y + 9, 8, "DESCRIPCIÓN", true, [1,1,1]);
+      pdfText(out, 365, y + 9, 8, "CANT.", true, [1,1,1], "right");
+      pdfText(out, 453, y + 9, 8, "P. UNITARIO", true, [1,1,1], "right");
+      pdfText(out, 543, y + 9, 8, "IMPORTE", true, [1,1,1], "right");
+      y -= 42;
+
+      items.forEach((item, index) => {
+        if (index % 2 === 0) pdfRect(out, 42, y - 7, 511, 39, [0.985,0.98,0.965], true);
+        const descLines = wrapText(String(item.description || ""), 51, 2);
+        pdfText(out, 52, y + 16, 9, descLines[0] || "Servicio", true, ink);
+        if (descLines[1]) pdfText(out, 52, y + 3, 8, descLines[1], false, muted);
+        pdfText(out, 365, y + 11, 9, formatQuantity(item.quantity) + " " + (item.unit || ""), false, ink, "right");
+        pdfText(out, 453, y + 11, 9, money(item.unitPrice), false, ink, "right");
+        pdfText(out, 543, y + 11, 9, money((Number(item.quantity)||0) * (Number(item.unitPrice)||0)), true, ink, "right");
+        y -= 42;
+      });
+
+      if (lastPage) {
+        const totalsTop = Math.min(y + 12, pageIndex === 0 ? 338 : 280);
+        let ty = totalsTop;
+        pdfLine(out, 340, ty + 22, 553, ty + 22, [0.84,0.82,0.78], .7);
+        pdfText(out, 390, ty, 9, "Subtotal", false, muted);
+        pdfText(out, 543, ty, 10, money(quote.totals.subtotal), true, ink, "right");
+        ty -= 22;
+        pdfText(out, 390, ty, 9, "IVA " + quote.vatRate + "%", false, muted);
+        pdfText(out, 543, ty, 10, money(quote.totals.vat), true, ink, "right");
+        ty -= 32;
+        pdfRect(out, 374, ty - 8, 179, 30, dark, true);
+        pdfText(out, 390, ty + 2, 10, "TOTAL", true, [1,1,1]);
+        pdfText(out, 543, ty + 2, 13, money(quote.totals.total), true, [1,1,1], "right");
+        ty -= 40;
+        pdfRect(out, 374, ty - 6, 179, 26, [0.95,0.88,0.81], true);
+        pdfText(out, 390, ty + 3, 8, "ANTICIPO " + quote.advancePct + "%", true, [0.38,0.25,0.15]);
+        pdfText(out, 543, ty + 3, 9, money(quote.totals.advance), true, [0.38,0.25,0.15], "right");
+
+        const termsY = Math.min(ty - 42, 170);
+        pdfText(out, 42, termsY, 8, "CONDICIONES Y OBSERVACIONES", true, copper);
+        wrapText(quote.terms || "Cotización sujeta a disponibilidad.", 100, 5).forEach((line, lineIndex) => {
+          pdfText(out, 42, termsY - 18 - lineIndex * 13, 8, line, false, muted);
+        });
+      }
+
+      pdfLine(out, 42, 48, 553, 48, [0.84,0.82,0.78], .7);
+      pdfText(out, 42, 31, 8, "Gracias por permitirnos ser parte de tu motivo.", true, dark);
+      pdfText(out, 553, 31, 8, "gamonjr90@gmail.com  ·  Tijuana, B.C.", false, muted, "right");
+      return out.join("\n");
+    }
+
+    function assemblePdf(streams) {
+      const pageCount = streams.length;
+      const fontRegularId = 3 + pageCount * 2;
+      const fontBoldId = fontRegularId + 1;
+      const objects = [];
+      objects[1] = "<< /Type /Catalog /Pages 2 0 R >>";
+      const kids = streams.map((_, index) => (3 + index * 2) + " 0 R").join(" ");
+      objects[2] = "<< /Type /Pages /Kids [" + kids + "] /Count " + pageCount + " >>";
+      streams.forEach((stream, index) => {
+        const pageId = 3 + index * 2;
+        const contentId = pageId + 1;
+        objects[pageId] = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 " + fontRegularId + " 0 R /F2 " + fontBoldId + " 0 R >> >> /Contents " + contentId + " 0 R >>";
+        objects[contentId] = "<< /Length " + winAnsiBytes(stream).length + " >>\nstream\n" + stream + "\nendstream";
+      });
+      objects[fontRegularId] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>";
+      objects[fontBoldId] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>";
+
+      const chunks = [winAnsiBytes("%PDF-1.4\n%Motivo\n")];
+      const offsets = [0];
+      let offset = chunks[0].length;
+      for (let id = 1; id < objects.length; id++) {
+        offsets[id] = offset;
+        const bytes = winAnsiBytes(id + " 0 obj\n" + objects[id] + "\nendobj\n");
+        chunks.push(bytes);
+        offset += bytes.length;
+      }
+      const xrefOffset = offset;
+      let xref = "xref\n0 " + objects.length + "\n0000000000 65535 f \n";
+      for (let id = 1; id < objects.length; id++) xref += String(offsets[id]).padStart(10, "0") + " 00000 n \n";
+      xref += "trailer\n<< /Size " + objects.length + " /Root 1 0 R >>\nstartxref\n" + xrefOffset + "\n%%EOF";
+      chunks.push(winAnsiBytes(xref));
+      return concatBytes(chunks);
+    }
+
+    function pdfText(out, x, y, size, text, bold, color, align) {
+      const safe = pdfEscape(String(text == null ? "" : text));
+      let adjustedX = x;
+      if (align === "right") adjustedX = x - estimatePdfWidth(String(text), size, bold);
+      out.push("BT /" + (bold ? "F2" : "F1") + " " + size + " Tf " + color.join(" ") + " rg 1 0 0 1 " + adjustedX.toFixed(2) + " " + y.toFixed(2) + " Tm (" + safe + ") Tj ET");
+    }
+    function pdfRect(out, x, y, width, height, color, fill) {
+      out.push(color.join(" ") + (fill ? " rg " : " RG ") + x + " " + y + " " + width + " " + height + " re " + (fill ? "f" : "S"));
+    }
+    function pdfLine(out, x1, y1, x2, y2, color, width) {
+      out.push(color.join(" ") + " RG " + width + " w " + x1 + " " + y1 + " m " + x2 + " " + y2 + " l S");
+    }
+    function pdfEscape(text) {
+      return text.replace(/[\\()]/g, "\\$&").replace(/[\r\n]+/g, " ");
+    }
+    function estimatePdfWidth(text, size, bold) {
+      return text.length * size * (bold ? .56 : .51);
+    }
+    function winAnsiBytes(text) {
+      const bytes = new Uint8Array(text.length);
+      const map = { 8216:145, 8217:146, 8220:147, 8221:148, 8226:149, 8211:150, 8212:151, 8230:133 };
+      for (let i = 0; i < text.length; i++) {
+        const code = text.charCodeAt(i);
+        bytes[i] = code <= 255 ? code : (map[code] || 63);
+      }
+      return bytes;
+    }
+    function concatBytes(chunks) {
+      const length = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+      const result = new Uint8Array(length);
+      let offset = 0;
+      chunks.forEach((chunk) => { result.set(chunk, offset); offset += chunk.length; });
+      return result;
+    }
+
+    function buildDefaultDescription(record) {
+      const main = record.foodNotes || record.foodInterest || record.serviceType || "Servicio de alimentos y bebidas";
+      return main + (record.eventType ? " · " + record.eventType : "");
+    }
+    function parseItems(value) {
+      if (Array.isArray(value)) return value;
+      try {
+        const parsed = JSON.parse(value || "[]");
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) { return []; }
+    }
+    function inferVatRate(record) {
+      if (record.subtotal && record.vat) return Math.round(Number(record.vat) / Number(record.subtotal) * 100) || 0;
+      return 0;
+    }
+    function inferAdvancePct(record) {
+      if (record.total && record.advance) return Math.round(Number(record.advance) / Number(record.total) * 100) || 0;
+      return 50;
+    }
+    function buildQuoteNumber(reference) {
+      const clean = String(reference || "").replace(/^MOT-/, "").replace(/[^\d-]/g, "");
+      return "COT-" + (clean || Date.now().toString().slice(-8));
+    }
+    function setText(id, value) { $(id).textContent = value == null || value === "" ? "—" : value; }
+    function normalize(value) { return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(); }
+    function escapeHtml(value) {
+      return String(value == null ? "" : value)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+    function money(value) {
+      return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 2 }).format(Number(value) || 0);
+    }
+    function formatQuantity(value) {
+      const number = Number(value) || 0;
+      return Number.isInteger(number) ? String(number) : number.toFixed(2);
+    }
+    function safeNumber(value, fallback) { const number = Number(value); return Number.isFinite(number) ? number : fallback; }
+    function todayIso() { return new Date().toISOString().slice(0, 10); }
+    function formatDate(value) {
+      if (!value) return "Por definir";
+      const parts = String(value).slice(0, 10).split("-");
+      if (parts.length === 3) return parts[2] + "/" + parts[1] + "/" + parts[0];
+      return String(value);
+    }
+    function formatShortDate(value) {
+      if (!value) return "";
+      const datePart = String(value).slice(0, 10);
+      return formatDate(datePart);
+    }
+    function wrapText(text, maxChars, maxLines) {
+      const words = String(text || "").replace(/\s+/g, " ").trim().split(" ");
+      const lines = [];
+      let line = "";
+      words.forEach((word) => {
+        const candidate = line ? line + " " + word : word;
+        if (candidate.length > maxChars && line) {
+          lines.push(line);
+          line = word;
+        } else line = candidate;
+      });
+      if (line) lines.push(line);
+      if (lines.length > maxLines) {
+        lines.length = maxLines;
+        lines[maxLines - 1] = lines[maxLines - 1].slice(0, Math.max(0, maxChars - 1)) + "…";
+      }
+      return lines;
+    }
+    function sanitizeFilename(value) { return String(value).replace(/[\\/:*?"<>|]+/g, "-").trim(); }
+    function pause(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
+    function showToast(message, error) {
+      clearTimeout(toastTimer);
+      toast.textContent = message;
+      toast.className = "toast" + (error ? " error" : "");
+      toast.hidden = false;
+      toastTimer = setTimeout(() => { toast.hidden = true; }, 4300);
+    }
+
+    if (LOCAL_DEMO) {
+      state.records = [
+        {
+          createdAt: "2026-08-18T10:24:00", reference: "MOT-260818-102400-482", status: "Nuevo",
+          name: "Mariana López", phone: "(664) 555 0182", email: "mariana@ejemplo.com",
+          eventType: "Evento social", eventDate: "2026-09-12", guests: 90,
+          serviceType: "Preparación y servicio en el lugar", location: "Jardín en Zona Río, Tijuana",
+          details: "Celebración familiar a las 17:00 horas. Se requiere servir durante dos horas.",
+          foodInterest: "Comida mexicana, Bebidas", foodNotes: "Flautas, tostadas, aguas frescas y sodas italianas"
+        },
+        {
+          createdAt: "2026-08-17T16:40:00", reference: "MOT-260817-164000-175", status: "En preparación",
+          name: "Corporativo Frontera", phone: "(664) 555 0141", email: "eventos@frontera-ejemplo.com",
+          eventType: "Evento corporativo", eventDate: "2026-09-04", guests: 55,
+          serviceType: "Alimentos, bebidas y montaje", location: "Parque Industrial Pacífico",
+          details: "Comida de integración. Montaje formal sencillo y servicio puntual.",
+          foodInterest: "Parrilla y tacos, Bebidas", foodNotes: "Tacos de asada, aguas frescas y café",
+          responsible: "Jonathan", lastContact: "2026-08-18", nextAction: "Enviar propuesta final",
+          nextActionDate: "2026-08-19", followNotes: "El cliente solicitó dos opciones de bebida.",
+          quoteNumber: "COT-260817-175", quoteDate: "2026-08-18", validityDays: 10,
+          quoteItems: JSON.stringify([
+            { description: "Servicio de tacos de asada con guarniciones", quantity: 55, unit: "persona", unitPrice: 185 },
+            { description: "Estación de aguas frescas", quantity: 55, unit: "persona", unitPrice: 35 },
+            { description: "Montaje y personal de servicio", quantity: 1, unit: "servicio", unitPrice: 2800 }
+          ]),
+          vatRate: 16, advancePct: 50,
+          terms: "Incluye montaje, desechables premium y dos horas de servicio. Fecha sujeta a disponibilidad."
+        },
+        {
+          createdAt: "2026-08-16T12:10:00", reference: "MOT-260816-121000-631", status: "Confirmado",
+          name: "Carlos Rivera", phone: "(664) 555 0199", email: "carlos@ejemplo.com",
+          eventType: "Entrega programada", eventDate: "2026-08-29", guests: 20,
+          serviceType: "Entrega de alimentos", location: "Otay Universidad",
+          details: "Entregar a las 13:30 horas.", foodInterest: "Botanas",
+          foodNotes: "Boneless, nuggets y papas"
+        }
+      ];
+      updateMetrics();
+      applyFilters();
+      loginScreen.hidden = true;
+      app.hidden = false;
+      selectRecord(state.records[0].reference);
+    } else if (state.key) {
+      $("adminKey").value = state.key;
+      loadRecords().then(() => {
+        loginScreen.hidden = true;
+        app.hidden = false;
+      }).catch(() => {
+        sessionStorage.removeItem(SESSION_KEY);
+      });
+    }
+  </script>
+</body>
+</html>
