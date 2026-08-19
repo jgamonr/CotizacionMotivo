@@ -461,24 +461,7 @@
   </style>
 </head>
 <body>
-  <section class="login-screen" id="loginScreen">
-    <form class="login-card" id="loginForm">
-      <div class="brand">
-        <span class="brand-mark">M</span>
-        <span><strong>MOTIVO</strong><small>ALIMENTOS &amp; BEBIDAS</small></span>
-      </div>
-      <h1>Control de<br>cotizaciones.</h1>
-      <p>Consulta solicitudes, registra el seguimiento y prepara una cotización profesional desde un solo lugar.</p>
-      <label for="adminKey">Clave de acceso</label>
-      <input class="control" id="adminKey" type="password" autocomplete="current-password" placeholder="Ingresa la clave del panel" required>
-      <div class="login-actions">
-        <button class="button button-primary" id="loginButton" type="submit">Entrar al panel <span>→</span></button>
-        <span class="hint">La clave se conserva únicamente durante esta sesión del navegador.</span>
-      </div>
-    </form>
-  </section>
-
-  <div class="app" id="app" hidden>
+  <div class="app" id="app">
     <header class="topbar">
       <div class="brand">
         <span class="brand-mark">M</span>
@@ -487,7 +470,6 @@
       <div class="topbar-actions">
         <span class="connection">Google Sheets conectado</span>
         <button class="button button-light" id="refreshButton" type="button" title="Actualizar registros">↻ <span>Actualizar</span></button>
-        <button class="button button-ghost" id="logoutButton" type="button">Salir</button>
       </div>
     </header>
 
@@ -649,12 +631,10 @@
     "use strict";
 
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzdmbhWQe3BVNoywWUSVSK1Gng4M6OCaeUflRI4r6nMgZFd5ZSC6oCKzY3YYF9JTyQWWA/exec";
-    const SESSION_KEY = "motivo_admin_key";
     const STATUS_OPTIONS = ["Nuevo", "Contactado", "En preparación", "Cotización enviada", "Confirmado", "No concretado"];
     const LOCAL_DEMO = location.hostname === "terminal.local" && new URLSearchParams(location.search).get("demo") === "1";
 
     const state = {
-      key: sessionStorage.getItem(SESSION_KEY) || "",
       records: [],
       filtered: [],
       current: null,
@@ -663,7 +643,6 @@
     };
 
     const $ = (id) => document.getElementById(id);
-    const loginScreen = $("loginScreen");
     const app = $("app");
     const requestsList = $("requestsList");
     const emptyDetail = $("emptyDetail");
@@ -671,30 +650,6 @@
     const toast = $("toast");
     let toastTimer;
 
-    $("loginForm").addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const button = $("loginButton");
-      state.key = $("adminKey").value.trim();
-      if (!state.key) return;
-      button.disabled = true;
-      button.textContent = "Conectando…";
-      try {
-        await loadRecords();
-        sessionStorage.setItem(SESSION_KEY, state.key);
-        loginScreen.hidden = true;
-        app.hidden = false;
-      } catch (error) {
-        showToast(error.message || "No fue posible ingresar. Revisa la clave.", true);
-      } finally {
-        button.disabled = false;
-        button.innerHTML = "Entrar al panel <span>→</span>";
-      }
-    });
-
-    $("logoutButton").addEventListener("click", () => {
-      sessionStorage.removeItem(SESSION_KEY);
-      location.reload();
-    });
     $("refreshButton").addEventListener("click", async () => {
       const button = $("refreshButton");
       button.disabled = true;
@@ -758,8 +713,8 @@
     $("pdfButton").addEventListener("click", downloadQuotePdf);
 
     async function loadRecords(keepReference) {
-      const response = await jsonp({ action: "list", key: state.key });
-      if (!response || !response.ok) throw new Error((response && response.error) || "La clave no es válida o el servicio no está disponible.");
+      const response = await jsonp({ action: "list" });
+      if (!response || !response.ok) throw new Error((response && response.error) || "El servicio no está disponible.");
       state.records = Array.isArray(response.records) ? response.records : [];
       updateMetrics();
       applyFilters();
@@ -948,7 +903,6 @@
     async function postAction(action, values) {
       const data = new FormData();
       data.append("action", action);
-      data.append("key", state.key);
       Object.entries(values).forEach(([name, value]) => data.append(name, value == null ? "" : String(value)));
       await fetch(APPS_SCRIPT_URL, { method: "POST", mode: "no-cors", body: data });
     }
@@ -1305,16 +1259,10 @@
       ];
       updateMetrics();
       applyFilters();
-      loginScreen.hidden = true;
-      app.hidden = false;
       selectRecord(state.records[0].reference);
-    } else if (state.key) {
-      $("adminKey").value = state.key;
-      loadRecords().then(() => {
-        loginScreen.hidden = true;
-        app.hidden = false;
-      }).catch(() => {
-        sessionStorage.removeItem(SESSION_KEY);
+    } else {
+      loadRecords().catch((error) => {
+        showToast(error.message || "No fue posible cargar las solicitudes.", true);
       });
     }
   </script>
